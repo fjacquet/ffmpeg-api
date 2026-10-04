@@ -64,15 +64,24 @@ func TestEncodeProducesM4A(t *testing.T) {
 		t.Skip("ffmpeg not installed")
 	}
 	rec := httptest.NewRecorder()
-	newMux().ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/m4a", bytes.NewReader(toneWAV(24000, 2))))
+	newMux().ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/m4a?filename=../x/daily.m4a", bytes.NewReader(toneWAV(24000, 2))))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("got %d: %s", rec.Code, rec.Body.String())
 	}
 	if ct := rec.Header().Get("Content-Type"); ct != "audio/mp4" {
 		t.Fatalf("content-type %q", ct)
 	}
+	if cd := rec.Header().Get("Content-Disposition"); cd != `attachment; filename=daily.m4a` {
+		t.Fatalf("content-disposition %q", cd)
+	}
 	// MP4 files carry an "ftyp" box right after the 4-byte size field.
 	if body := rec.Body.Bytes(); len(body) < 8 || string(body[4:8]) != "ftyp" {
 		t.Fatalf("output is not an MP4 container")
+	}
+}
+
+func TestOutputNameDefault(t *testing.T) {
+	if got := outputName(httptest.NewRequest(http.MethodPost, "/m4a", nil)); got != "audio.m4a" {
+		t.Fatalf("got %q", got)
 	}
 }

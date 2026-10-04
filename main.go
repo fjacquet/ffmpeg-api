@@ -7,6 +7,7 @@ import (
 	"context"
 	"io"
 	"log"
+	"mime"
 	"net/http"
 	"os"
 	"os/exec"
@@ -67,9 +68,20 @@ func encodeM4A(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { _ = res.Close() }()
 	w.Header().Set("Content-Type", "audio/mp4")
+	w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": outputName(r)}))
 	if _, err := io.Copy(w, res); err != nil {
 		log.Printf("write response: %v", err)
 	}
+}
+
+// outputName returns the ?filename= query value reduced to a bare file name,
+// so clients such as the n8n HTTP Request node can name the downloaded file.
+func outputName(r *http.Request) string {
+	name := filepath.Base(r.URL.Query().Get("filename"))
+	if name == "." || name == "/" {
+		return "audio.m4a"
+	}
+	return name
 }
 
 func livez(w http.ResponseWriter, _ *http.Request) {
