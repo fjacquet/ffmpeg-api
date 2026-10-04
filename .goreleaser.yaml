@@ -1,0 +1,63 @@
+# GoReleaser configuration — https://goreleaser.com
+# The product is the container image; binaries are built only to feed it.
+# Validate locally with: goreleaser check
+version: 2
+
+project_name: ffmpeg-api
+
+builds:
+  - id: ffmpeg-api
+    main: .
+    binary: ffmpeg-api
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: ffmpeg-api
+    ids:
+      - ffmpeg-api
+    formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE*
+      - README.md
+
+checksum:
+  name_template: checksums.txt
+
+# Multi-arch image via buildx. sbom:true attaches SBOM + provenance attestations.
+dockers_v2:
+  - id: ffmpeg-api
+    ids:
+      - ffmpeg-api
+    dockerfile: Dockerfile.goreleaser
+    images:
+      - "ghcr.io/fjacquet/ffmpeg-api"
+    tags:
+      - "{{ .Version }}"
+      - "{{ .Major }}.{{ .Minor }}"
+      - "{{ if not .Prerelease }}latest{{ end }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.source: "https://github.com/fjacquet/ffmpeg-api"
+      org.opencontainers.image.licenses: "Apache-2.0"
+    sbom: true
+
+changelog:
+  use: github-native

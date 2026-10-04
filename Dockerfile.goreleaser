@@ -1,0 +1,17 @@
+# Used by GoReleaser (dockers_v2). buildx lays the cross-compiled binary out
+# per-platform as ${TARGETPLATFORM}/ffmpeg-api in the build context.
+FROM docker.io/library/alpine:latest
+
+RUN apk --no-cache add ffmpeg && adduser -D -u 10001 ffmpeg-api
+
+ARG TARGETPLATFORM
+COPY ${TARGETPLATFORM}/ffmpeg-api /usr/bin/ffmpeg-api
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://127.0.0.1:8080/livez || exit 1
+
+USER ffmpeg-api
+
+ENTRYPOINT ["/usr/bin/ffmpeg-api"]
