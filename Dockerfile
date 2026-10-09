@@ -1,5 +1,5 @@
 # Local/dev build from source. Releases use Dockerfile.goreleaser (prebuilt binary).
-FROM golang:1.27.1-alpine AS builder
+FROM golang:1.27.2-alpine AS builder
 WORKDIR /src
 COPY go.mod ./
 COPY *.go ./
